@@ -50,7 +50,6 @@ class AutoShutdownApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        # Регистрация AppUserModelID для отображения иконки на панели задач Windows
         if sys.platform == "win32":
             try:
                 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("CyberCraft.SmartShutdown.App.1.0")
@@ -61,13 +60,13 @@ class AutoShutdownApp(ctk.CTk):
         self.is_monitoring = False
         self.monitor_thread = None
         self.tray_icon = None
+        self.chosen_max_time_minutes = 0
 
         self.CARD_BG = "#14151C"
         self.CARD_BORDER = "#232533"
         self.ACCENT_COLOR = "#6366F1"
         self.ACCENT_HOVER = "#4F46E5"
 
-        # Установка иконки приложения
         icon_path = get_resource_path("icon.ico")
         if os.path.exists(icon_path):
             try:
@@ -193,7 +192,6 @@ class AutoShutdownApp(ctk.CTk):
         self.sound_switch.select()
         self.sound_switch.pack(side="right", padx=5)
 
-        # Отдельная кнопка сворачивания в трей внизу интерфейса
         if TRAY_AVAILABLE:
             btn_tray = ctk.CTkButton(
                 settings_frame, text="Свернуть в трей 📌", font=("Segoe UI", 11), height=28,
@@ -425,6 +423,17 @@ class AutoShutdownApp(ctk.CTk):
             self.speed_label.configure(text="0.00 Кб/с")
             self.log_label.configure(text="Мониторинг остановлен.", text_color="#F59E0B")
 
+    def update_speed_ui(self, speed_text, log_text, is_idle, timer_text=None):
+        if not self.is_monitoring:
+            return
+        self.speed_label.configure(text=speed_text)
+        self.log_label.configure(
+            text=log_text,
+            text_color="#F59E0B" if is_idle else "#06B6D4"
+        )
+        if timer_text and self.max_time_seconds > 0:
+            self.timer_preview_label.configure(text=timer_text)
+
     def network_monitor_loop(self):
         start_time = time.time()
         idle_counter = 0
@@ -434,6 +443,10 @@ class AutoShutdownApp(ctk.CTk):
             net_start = psutil.net_io_counters()
             bytes_start = net_start.bytes_sent if check_upload else net_start.bytes_recv
             time.sleep(1)
+
+            if not self.is_monitoring:
+                break
+
             net_end = psutil.net_io_counters()
             bytes_end = net_end.bytes_sent if check_upload else net_end.bytes_recv
 
@@ -441,20 +454,21 @@ class AutoShutdownApp(ctk.CTk):
             current_speed_kb = current_speed_bytes / 1024
 
             if current_speed_kb > 1024:
-                self.speed_label.configure(text=f"{current_speed_kb/1024:.2f} Мб/с")
+                speed_str = f"{current_speed_kb/1024:.2f} Мб/с"
             else:
-                self.speed_label.configure(text=f"{current_speed_kb:.2f} Кб/с")
+                speed_str = f"{current_speed_kb:.2f} Кб/с"
 
             elapsed_time = time.time() - start_time
             remaining_time_min = 0
+            timer_str = None
 
             if self.max_time_seconds > 0:
                 remaining_time_min = max(0, int((self.max_time_seconds - elapsed_time) / 60))
                 word = get_minutes_declension(remaining_time_min)
-                self.timer_preview_label.configure(text=f"Через {remaining_time_min} {word}")
+                timer_str = f"Через {remaining_time_min} {word}"
 
                 if elapsed_time >= self.max_time_seconds:
-                    self.trigger_shutdown("Сработала страховка времени!")
+                    self.after(0, lambda: self.trigger_shutdown("Сработала страховка времени!"))
                     break
 
             if current_speed_bytes < self.threshold_bytes:
@@ -463,13 +477,12 @@ class AutoShutdownApp(ctk.CTk):
                 idle_counter = 0
 
             time_info = f" | До страховки: {remaining_time_min} мин." if self.max_time_seconds > 0 else " | Страховка: Откл."
-            self.log_label.configure(
-                text=f"Падение трафика: {idle_counter} из {self.idle_limit} сек.{time_info}",
-                text_color="#F59E0B" if idle_counter > 0 else "#06B6D4"
-            )
+            log_str = f"Падение трафика: {idle_counter} из {self.idle_limit} сек.{time_info}"
+
+            self.after(0, self.update_speed_ui, speed_str, log_str, idle_counter > 0, timer_str)
 
             if idle_counter >= self.idle_limit:
-                self.trigger_shutdown("Падение трафика зафиксировано.")
+                self.after(0, lambda: self.trigger_shutdown("Падение трафика зафиксировано."))
                 break
 
     def trigger_shutdown(self, reason):
@@ -479,11 +492,18 @@ class AutoShutdownApp(ctk.CTk):
         if self.tray_icon:
             self.restore_from_tray()
 
-        if sys.platform == "win32" and self.sound_switch.get() == 1:
-            try:
-                winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
-            except Exception:
-                pass
+        if bool(self.sound_switch.get()):
+            sound_path = get_resource_path("alert.wav")
+            if sys.platform == "win32" and os.path.exists(sound_path):
+                try:
+                    winsound.PlaySound(sound_path, winsound.SND_FILENAME | winsound.SND_ASYNC)
+                except Exception:
+                    pass
+            elif sys.platform == "win32":
+                try:
+                    winsound.PlaySound("SystemExclamation", winsound.SND_ALIAS | winsound.SND_ASYNC)
+                except Exception:
+                    pass
 
         self.status_label.configure(text=f"● ВЫПОЛНЕНИЕ: {action_type.upper()}", text_color="#EF4444")
         self.log_label.configure(text=f"{reason}\nДействие через 60 сек!", text_color="#EF4444")
@@ -499,26 +519,37 @@ class AutoShutdownApp(ctk.CTk):
                 os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
 
     def abort_system_shutdown(self):
+        # Отменяем команду отложенного выключения Windows
         if sys.platform == "win32":
             os.system("shutdown /a")
 
+        # Полный сброс состояния фонового мониторинга
+        self.is_monitoring = False
+        self.max_time_seconds = 0
+
+        # Разблокируем элементы управления
         self.timer_entry.configure(state="normal")
         self.traffic_dir_option.configure(state="normal")
         self.action_option.configure(state="normal")
         self.sound_switch.configure(state="normal")
 
+        # Сбрасываем превью таймера к исходному значению из поля ввода
         if self.chosen_max_time_minutes > 0:
             word = get_minutes_declension(self.chosen_max_time_minutes)
             self.timer_preview_label.configure(text=f"Через {self.chosen_max_time_minutes} {word}", text_color="#10B981")
         else:
             self.timer_preview_label.configure(text="Отключена", text_color="#6B7280")
 
+        # Переключаем кнопки и интерфейсные плашки обратно
         self.btn_cancel_shutdown.pack_forget()
         self.btn_start.pack(pady=4, padx=16, fill="x")
         self.btn_start.configure(text="Включить авто-мониторинг", fg_color=self.ACCENT_COLOR, hover_color=self.ACCENT_HOVER)
-        self.status_label.configure(text="● Отменено пользователем", text_color="#9CA3AF")
-        self.log_label.configure(text="Действие ПК отменено.", text_color="#10B981")
+        
+        self.status_label.configure(text="● Ожидание запуска", text_color="#9CA3AF")
+        self.speed_label.configure(text="0.00 Кб/с")
+        self.log_label.configure(text="Действие ПК отменено. Мониторинг сброшен.", text_color="#10B981")
 
 if __name__ == "__main__":
     app = AutoShutdownApp()
+    app.mainloop()
     app.mainloop()

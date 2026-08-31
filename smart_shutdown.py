@@ -21,6 +21,16 @@ except ImportError:
 
 CONFIG_FILE = "window_config.json"
 
+# Значения по умолчанию
+DEFAULT_CONFIG = {
+    "threshold_kb": "300.0",
+    "idle_time": "60",
+    "timer_raw": "0",
+    "traffic_dir": "Отдача (Upload)",
+    "action": "Завершение работы",
+    "sound_enabled": True
+}
+
 ctk.set_appearance_mode("Dark")
 
 def get_minutes_declension(n):
@@ -74,10 +84,21 @@ class AutoShutdownApp(ctk.CTk):
             except Exception:
                 pass
 
+        # Центрируем окно под любой монитор (4K, Full HD и т.д.)
+        self.center_window(450, 640)
+
         self.setup_ui()
         self.load_config()
 
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    def center_window(self, width, height):
+        self.update_idletasks()
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        x = (screen_width // 2) - (width // 2)
+        y = (screen_height // 2) - (height // 2)
+        self.geometry(f"{width}x{height}+{x}+{y}")
 
     def setup_ui(self):
         self.configure(fg_color="#0B0C10")
@@ -120,7 +141,7 @@ class AutoShutdownApp(ctk.CTk):
         self.traffic_dir_option = ctk.CTkOptionMenu(
             row1, values=["Отдача (Upload)", "Загрузка (Download)"], width=135, height=26,
             font=("Segoe UI", 11), fg_color="#0B0C10", button_color="#1E202E", button_hover_color="#282A3D",
-            text_color="#F3F4F6"
+            text_color="#F3F4F6", command=lambda _: self.save_config()
         )
         self.traffic_dir_option.pack(side="left", padx=4)
 
@@ -128,8 +149,9 @@ class AutoShutdownApp(ctk.CTk):
         self.speed_entry = ctk.CTkEntry(
             row1, width=65, height=28, font=("Segoe UI", 12), fg_color="#0B0C10", border_color=self.CARD_BORDER, text_color="#F3F4F6"
         )
-        self.speed_entry.insert(0, "300.0")
+        self.speed_entry.insert(0, DEFAULT_CONFIG["threshold_kb"])
         self.speed_entry.pack(side="right", padx=2)
+        self.speed_entry.bind("<KeyRelease>", lambda e: self.save_config())
 
         row2 = ctk.CTkFrame(
             settings_frame, fg_color=self.CARD_BG, border_width=1, border_color=self.CARD_BORDER, corner_radius=10
@@ -141,8 +163,9 @@ class AutoShutdownApp(ctk.CTk):
         self.idle_entry = ctk.CTkEntry(
             row2, width=65, height=28, font=("Segoe UI", 12), fg_color="#0B0C10", border_color=self.CARD_BORDER, text_color="#F3F4F6"
         )
-        self.idle_entry.insert(0, "60")
+        self.idle_entry.insert(0, DEFAULT_CONFIG["idle_time"])
         self.idle_entry.pack(side="right", padx=2)
+        self.idle_entry.bind("<KeyRelease>", lambda e: self.save_config())
 
         row_action = ctk.CTkFrame(
             settings_frame, fg_color=self.CARD_BG, border_width=1, border_color=self.CARD_BORDER, corner_radius=10
@@ -153,7 +176,7 @@ class AutoShutdownApp(ctk.CTk):
         self.action_option = ctk.CTkOptionMenu(
             row_action, values=["Завершение работы", "Сон / Гибернация", "Перезагрузка"], width=170, height=26,
             font=("Segoe UI", 11), fg_color="#0B0C10", button_color="#1E202E", button_hover_color="#282A3D",
-            text_color="#F3F4F6"
+            text_color="#F3F4F6", command=lambda _: self.save_config()
         )
         self.action_option.pack(side="right", padx=2)
 
@@ -167,7 +190,7 @@ class AutoShutdownApp(ctk.CTk):
             row3, width=80, height=28, font=("Segoe UI", 12), placeholder_text="0 - откл",
             fg_color="#0B0C10", border_color=self.CARD_BORDER, text_color="#F3F4F6"
         )
-        self.timer_entry.insert(0, "0")
+        self.timer_entry.insert(0, DEFAULT_CONFIG["timer_raw"])
         self.timer_entry.pack(side="left", padx=5)
 
         self.timer_preview_label = ctk.CTkLabel(row3, text="Отключена", font=("Segoe UI", 11), text_color="#6B7280")
@@ -187,18 +210,29 @@ class AutoShutdownApp(ctk.CTk):
 
         ctk.CTkLabel(row_sound, text="Звуковое оповещение:", font=("Segoe UI", 12, "bold"), text_color="#E5E7EB").pack(side="left", padx=5)
         self.sound_switch = ctk.CTkSwitch(
-            row_sound, text="Вкл", font=("Segoe UI", 11), progress_color=self.ACCENT_COLOR, text_color="#9CA3AF"
+            row_sound, text="Вкл", font=("Segoe UI", 11), progress_color=self.ACCENT_COLOR, text_color="#9CA3AF",
+            command=self.save_config
         )
         self.sound_switch.select()
         self.sound_switch.pack(side="right", padx=5)
 
+        extra_btns_frame = ctk.CTkFrame(settings_frame, fg_color="transparent")
+        extra_btns_frame.pack(fill="x", pady=(4, 0))
+
         if TRAY_AVAILABLE:
             btn_tray = ctk.CTkButton(
-                settings_frame, text="Свернуть в трей 📌", font=("Segoe UI", 11), height=28,
+                extra_btns_frame, text="В трей 📌", font=("Segoe UI", 11), height=28,
                 fg_color="#1E202E", hover_color="#282A3D", text_color="#9CA3AF",
                 border_width=1, border_color="#282A3D", command=self.hide_to_tray
             )
-            btn_tray.pack(fill="x", pady=(4, 0))
+            btn_tray.pack(side="left", expand=True, fill="x", padx=(0, 2))
+
+        btn_reset = ctk.CTkButton(
+            extra_btns_frame, text="Сбросить настройки ↺", font=("Segoe UI", 11), height=28,
+            fg_color="#1E202E", hover_color="#371B1E", text_color="#EF4444",
+            border_width=1, border_color="#282A3D", command=self.reset_to_defaults
+        )
+        btn_reset.pack(side="right", expand=True, fill="x", padx=(2, 0))
 
         # --- ИНФО-ЛОГ И КНОПКИ ---
         self.log_label = ctk.CTkLabel(
@@ -250,43 +284,45 @@ class AutoShutdownApp(ctk.CTk):
         )
         boosty_btn.pack(side="left", padx=3)
 
-    # --- СОХРАНЕНИЕ / ЗАГРУЗКА ---
+    # --- СОХРАНЕНИЕ / ЗАГРУЗКА / СБРОС ---
+    def apply_config_dict(self, cfg):
+        self.speed_entry.delete(0, "end")
+        self.speed_entry.insert(0, str(cfg.get("threshold_kb", DEFAULT_CONFIG["threshold_kb"])))
+
+        self.idle_entry.delete(0, "end")
+        self.idle_entry.insert(0, str(cfg.get("idle_time", DEFAULT_CONFIG["idle_time"])))
+
+        self.timer_entry.delete(0, "end")
+        self.timer_entry.insert(0, str(cfg.get("timer_raw", DEFAULT_CONFIG["timer_raw"])))
+        self.on_timer_input_change(None)
+
+        dir_val = cfg.get("traffic_dir", DEFAULT_CONFIG["traffic_dir"])
+        if dir_val in ["Отдача (Upload)", "Загрузка (Download)"]:
+            self.traffic_dir_option.set(dir_val)
+
+        act_val = cfg.get("action", DEFAULT_CONFIG["action"])
+        if act_val in ["Завершение работы", "Сон / Гибернация", "Перезагрузка"]:
+            self.action_option.set(act_val)
+
+        if cfg.get("sound_enabled", DEFAULT_CONFIG["sound_enabled"]):
+            self.sound_switch.select()
+        else:
+            self.sound_switch.deselect()
+
     def load_config(self):
         if os.path.exists(CONFIG_FILE):
             try:
                 with open(CONFIG_FILE, "r", encoding="utf-8") as f:
                     cfg = json.load(f)
-                    self.geometry(cfg.get("geometry", "450x640"))
-                    
-                    self.speed_entry.delete(0, "end")
-                    self.speed_entry.insert(0, str(cfg.get("threshold_kb", "300.0")))
-
-                    self.idle_entry.delete(0, "end")
-                    self.idle_entry.insert(0, str(cfg.get("idle_time", "60")))
-
-                    self.timer_entry.delete(0, "end")
-                    self.timer_entry.insert(0, str(cfg.get("timer_raw", "0")))
-                    self.on_timer_input_change(None)
-
-                    dir_val = cfg.get("traffic_dir", "Отдача (Upload)")
-                    if dir_val in ["Отдача (Upload)", "Загрузка (Download)"]:
-                        self.traffic_dir_option.set(dir_val)
-
-                    act_val = cfg.get("action", "Завершение работы")
-                    if act_val in ["Завершение работы", "Сон / Гибернация", "Перезагрузка"]:
-                        self.action_option.set(act_val)
-
-                    if not cfg.get("sound_enabled", True):
-                        self.sound_switch.deselect()
+                    self.apply_config_dict(cfg)
                     return
             except Exception:
                 pass
-        self.geometry("450x640")
+        self.apply_config_dict(DEFAULT_CONFIG)
 
     def save_config(self):
         try:
             cfg = {
-                "geometry": self.geometry(),
                 "threshold_kb": self.speed_entry.get(),
                 "idle_time": self.idle_entry.get(),
                 "timer_raw": self.timer_entry.get(),
@@ -298,6 +334,11 @@ class AutoShutdownApp(ctk.CTk):
                 json.dump(cfg, f, ensure_ascii=False, indent=2)
         except Exception:
             pass
+
+    def reset_to_defaults(self):
+        self.apply_config_dict(DEFAULT_CONFIG)
+        self.save_config()
+        self.log_label.configure(text="Настройки сброшены по умолчанию", text_color="#10B981")
 
     def on_closing(self):
         self.save_config()
@@ -388,9 +429,12 @@ class AutoShutdownApp(ctk.CTk):
         else:
             self.chosen_max_time_minutes = 0
             self.timer_preview_label.configure(text="Отключена", text_color="#6B7280")
+            
+        self.save_config()
 
     def toggle_monitoring(self):
         if not self.is_monitoring:
+            self.save_config()
             self.is_monitoring = True
             self.btn_start.configure(text="Остановить контроль", fg_color="#374151", hover_color="#4B5563")
             self.status_label.configure(text="● Мониторинг запущен", text_color="#10B981")
@@ -519,28 +563,23 @@ class AutoShutdownApp(ctk.CTk):
                 os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
 
     def abort_system_shutdown(self):
-        # Отменяем команду отложенного выключения Windows
         if sys.platform == "win32":
             os.system("shutdown /a")
 
-        # Полный сброс состояния фонового мониторинга
         self.is_monitoring = False
         self.max_time_seconds = 0
 
-        # Разблокируем элементы управления
         self.timer_entry.configure(state="normal")
         self.traffic_dir_option.configure(state="normal")
         self.action_option.configure(state="normal")
         self.sound_switch.configure(state="normal")
 
-        # Сбрасываем превью таймера к исходному значению из поля ввода
         if self.chosen_max_time_minutes > 0:
             word = get_minutes_declension(self.chosen_max_time_minutes)
             self.timer_preview_label.configure(text=f"Через {self.chosen_max_time_minutes} {word}", text_color="#10B981")
         else:
             self.timer_preview_label.configure(text="Отключена", text_color="#6B7280")
 
-        # Переключаем кнопки и интерфейсные плашки обратно
         self.btn_cancel_shutdown.pack_forget()
         self.btn_start.pack(pady=4, padx=16, fill="x")
         self.btn_start.configure(text="Включить авто-мониторинг", fg_color=self.ACCENT_COLOR, hover_color=self.ACCENT_HOVER)
@@ -551,5 +590,4 @@ class AutoShutdownApp(ctk.CTk):
 
 if __name__ == "__main__":
     app = AutoShutdownApp()
-    app.mainloop()
     app.mainloop()

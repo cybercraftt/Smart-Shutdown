@@ -107,17 +107,7 @@ window_config.json
 
 ## 🖼️ Скриншот
 
-Добавьте скриншот программы в папку `assets` и назовите его:
-
-```text
-assets/screenshot.png
-```
-
-После этого можно использовать изображение в README:
-
-```markdown
-![Image Alt](https://github.com/cybercraftt/Smart-Shutdown/blob/e0b20300db21105a2e92c8b7a73e326cdf52fa94/assets/screenshot.png)
-```
+![Smart Shutdown](https://raw.githubusercontent.com/cybercraftt/Smart-Shutdown/e0b20300db21105a2e92c8b7a73e326cdf52fa94/assets/screenshot.png)
 
 ---
 

@@ -159,7 +159,7 @@ Smart-Shutdown/
 Склонируйте репозиторий:
 
 ```bash
-git clone https://github.com/USERNAME/Smart-Shutdown.git
+git clone https://github.com/cybercraftt/Smart-Shutdown.git
 ```
 
 Перейдите в папку проекта:

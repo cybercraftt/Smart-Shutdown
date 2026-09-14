@@ -153,9 +153,7 @@ The portable version:
 
 ## 🖼️ Screenshot
 
-<!-- Add your screenshot here -->
-
-![Smart Shutdown Screenshot](assets/screenshot.png)
+![Smart Shutdown Screenshot](assets/screenshot.en.png)
 
 ---
 

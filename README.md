@@ -1,5 +1,9 @@
 # 💻 Smart Shutdown
 
+[🇬🇧 English](README.en.md) · [🇷🇺 Русский](README.md)
+
+Windows utility that automatically shuts down, sleeps, hibernates, or restarts your PC when network activity decreases or downloads are finished.
+
 **Smart Shutdown** - утилита для Windows, которая отслеживает сетевую активность компьютера и автоматически выполняет выбранное действие после завершения загрузок или снижения сетевого трафика.
 
 Программа может автоматически:

@@ -116,7 +116,7 @@ assets/screenshot.png
 После этого можно использовать изображение в README:
 
 ```markdown
-![Smart-Shutdown](assets/screenshot.png)
+![Smart Shutdown](assets/screenshot.png)
 ```
 
 ---

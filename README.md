@@ -105,6 +105,20 @@ window_config.json
 
 ---
 
+## 🖼️ Скриншот
+
+Добавьте скриншот программы в папку `assets` и назовите его:
+
+```text
+assets/screenshot.png
+```
+
+После этого можно использовать изображение в README:
+
+```markdown
+![Smart-Shutdown](assets/screenshot.png)
+```
+
 ---
 
 ## 💻 Системные требования
@@ -540,6 +554,7 @@ MIT License
 LICENSE
 ```
 
+И обновите этот раздел README.
 
 ---
 

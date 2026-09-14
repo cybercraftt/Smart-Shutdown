@@ -540,7 +540,6 @@ MIT License
 LICENSE
 ```
 
-И обновите этот раздел README.
 
 ---
 
@@ -548,14 +547,14 @@ LICENSE
 
 Если проект оказался полезным, вы можете поддержать автора:
 
-* YouTube — публикации и видео о проектах;
-* Telegram — новости и обновления;
-* Boosty — поддержка разработки.
+* YouTube - публикации и видео о проектах;
+* Telegram - новости и обновления;
+* Boosty - поддержка разработки.
 
 Добавьте свои актуальные ссылки:
 
 ```text
-YouTube: YOUR_YOUTUBE_LINK
+YouTube: https://www.youtube.com/channel/UCcGfKjP4XdfkLokNgVOIAyA
 Telegram: https://t.me/CyberCraftLab
 Boosty: https://boosty.to/cyber_craft
 ```
@@ -588,4 +587,4 @@ Language: Python
 
 **CyberCraft**
 
-Smart Shutdown — инструмент для автоматизации завершения работы Windows после окончания сетевой активности.
+Smart Shutdown - инструмент для автоматизации завершения работы Windows после окончания сетевой активности.

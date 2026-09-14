@@ -1,3 +1,4 @@
-psutil==5.9.8
-# Если используешь кастомный интерфейс, раскомментируй строку ниже:
-# customtkinter==5.2.2
+psutil
+customtkinter
+pystray
+pillow

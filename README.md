@@ -558,12 +558,9 @@ LICENSE
 * Telegram - новости и обновления;
 * Boosty - поддержка разработки.
 
-Добавьте свои актуальные ссылки:
-
 ```text
 YouTube: https://www.youtube.com/channel/UCcGfKjP4XdfkLokNgVOIAyA
 Telegram: https://t.me/CyberCraftLab
-Boosty: https://boosty.to/cyber_craft
 ```
 
 ---
@@ -576,6 +573,14 @@ Boosty: https://boosty.to/cyber_craft
 * сообщите об ошибке через Issues;
 * предложите улучшение через Pull Request;
 * поделитесь проектом с другими пользователями.
+
+* ❤️ Поддержать разработку
+
+Все мои программы распространяются бесплатно.
+
+Если программа оказалась полезной и вы хотите поддержать дальнейшую разработку - буду благодарен за поддержку.
+
+Boosty → https://boosty.to/cyber_craft
 
 ---
 

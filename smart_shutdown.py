@@ -102,7 +102,7 @@ LANGUAGES = {
         "safety_info_fmt": " | До страховки: {min} мин.",
         "safety_off_info": " | Страховка: Откл.",
         "in_minutes_fmt": "Через {min} мин.",
-        "traffic_dirs": ["Отдача (Upload)", "Загрузка (Download)"]
+        "traffic_dirs": ["Отдача", "Загрузка"]
     },
     "Español": {
         "title": "Creator's Smart Shutdown",
@@ -387,6 +387,9 @@ class AutoShutdownApp(ctk.CTk):
             except Exception:
                 pass
 
+        # Флаг предотвращает перезапись JSON во время построения GUI
+        self._is_loading_ui = True
+
         self.current_lang = DEFAULT_CONFIG["language"]
         self.is_monitoring = False
         self.monitor_thread = None
@@ -408,6 +411,9 @@ class AutoShutdownApp(ctk.CTk):
         self.center_window(460, 680)
         self.setup_ui()
         self.load_config()
+
+        # Разблокируем автосохранение конфигурации после загрузки данных
+        self._is_loading_ui = False
 
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
@@ -628,7 +634,7 @@ class AutoShutdownApp(ctk.CTk):
         boosty_btn = ctk.CTkButton(
             btn_box, text="Boosty", font=("Segoe UI", 11, "bold"), width=95, height=28, corner_radius=8,
             fg_color="#1E202E", hover_color="#282A3D", text_color="#FB923C", border_width=1, border_color="#282A3D",
-            command=lambda: webbrowser.open("https://boosty.to/cyber_craft")
+            command=lambda: webbrowser.open("https://boosty.to/dufna")
         )
         boosty_btn.pack(side="left", padx=3)
 
@@ -733,6 +739,10 @@ class AutoShutdownApp(ctk.CTk):
         self.apply_config_dict(DEFAULT_CONFIG)
 
     def save_config(self):
+        # Блокируем сохранение в момент первичной настройки UI
+        if getattr(self, "_is_loading_ui", False):
+            return
+
         try:
             cfg = {
                 "threshold_kb": self.speed_entry.get(),

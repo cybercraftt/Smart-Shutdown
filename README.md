@@ -580,7 +580,7 @@ Telegram: https://t.me/CyberCraftLab
 
 Если программа оказалась полезной и вы хотите поддержать дальнейшую разработку - буду благодарен за поддержку.
 
-Boosty → https://boosty.to/cyber_craft
+Boosty → https://boosty.to/dufna
 
 ---
 

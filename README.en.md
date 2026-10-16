@@ -618,7 +618,7 @@ If Smart Shutdown is useful to you, you can support the project by following the
 
 * **YouTube:** [CyberCraft](https://www.youtube.com/channel/UCcGfKjP4XdfkLokNgVOIAyA)
 * **Telegram:** [CyberCraftLab](https://t.me/CyberCraftLab)
-* **Boosty:** [Support the project](https://boosty.to/cyber_craft)
+* **Boosty:** [Support the project](https://boosty.to/dufna)
 
 ---
 
